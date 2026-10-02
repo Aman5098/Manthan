@@ -1,0 +1,8 @@
+node_modules
+.env
+.env.local
+.next
+api/uploads/*
+!api/uploads/.gitkeep
+!api/uploads/seed
+!api/uploads/seed/*.jpg
