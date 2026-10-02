@@ -20,6 +20,7 @@ router.delete('/news-events/:id', requireAdmin, newsEvents.remove);
 
 router.get('/enquiries', requireAdmin, enquiries.list);
 router.patch('/enquiries/:id/status', requireAdmin, enquiries.updateStatus);
+router.post('/enquiries/:id/retry-crm', requireAdmin, enquiries.retryCRM);
 
 router.get('/theme', requireAdmin, getActiveTheme);
 router.put('/theme', requireAdmin, setActiveTheme);

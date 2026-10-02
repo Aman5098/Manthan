@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { fetchAdminEnquiries, updateEnquiryStatus } from '@/lib/adminApi';
+import { RotateCw, Eye } from 'lucide-react';
+import { fetchAdminEnquiries, updateEnquiryStatus, retryEnquiryCRM } from '@/lib/adminApi';
 import { Skeleton } from '@/components/Skeleton';
+import { Modal } from '@/components/Modal';
 
 function EnquiriesSkeleton() {
   return (
@@ -42,6 +44,8 @@ export default function AdminEnquiriesPage() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(true);
+  const [retryingId, setRetryingId] = useState(null);
+  const [selectedEnquiry, setSelectedEnquiry] = useState(null);
 
   const load = useCallback(async (p, s) => {
     const data = await fetchAdminEnquiries(p, 10, s || undefined);
@@ -60,6 +64,16 @@ export default function AdminEnquiriesPage() {
   async function handleStatusChange(id, newStatus) {
     await updateEnquiryStatus(id, newStatus);
     load(page, status);
+  }
+
+  async function handleRetryCRM(id) {
+    setRetryingId(id);
+    try {
+      await retryEnquiryCRM(id);
+      await load(page, status);
+    } finally {
+      setRetryingId(null);
+    }
   }
 
   return (
@@ -95,6 +109,7 @@ export default function AdminEnquiriesPage() {
                 <th className="px-4 py-3">Received</th>
                 <th className="px-4 py-3">CRM</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right">Details</th>
               </tr>
             </thead>
             <tbody>
@@ -106,9 +121,21 @@ export default function AdminEnquiriesPage() {
                   <td className="px-4 py-3">{e.mobile}</td>
                   <td className="px-4 py-3">{new Date(e.createdAt).toLocaleString('en-IN')}</td>
                   <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${crmColors[e.crmStatus]}`}>
-                      {e.crmStatus}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${crmColors[e.crmStatus]}`}>
+                        {e.crmStatus}
+                      </span>
+                      {e.crmStatus === 'Failed' && (
+                        <button
+                          onClick={() => handleRetryCRM(e._id)}
+                          disabled={retryingId === e._id}
+                          aria-label="Retry CRM push"
+                          className="text-gray-400 transition hover:text-[var(--color-gold)] disabled:opacity-40"
+                        >
+                          <RotateCw size={14} strokeWidth={2} className={retryingId === e._id ? 'animate-spin' : ''} />
+                        </button>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <select
@@ -121,11 +148,20 @@ export default function AdminEnquiriesPage() {
                       <option value="Closed">Closed</option>
                     </select>
                   </td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => setSelectedEnquiry(e)}
+                      aria-label="View details"
+                      className="text-[var(--color-ink-soft)] transition hover:text-[var(--color-gold)]"
+                    >
+                      <Eye size={17} strokeWidth={1.75} />
+                    </button>
+                  </td>
                 </tr>
               ))}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-400">
                     No enquiries found.
                   </td>
                 </tr>
@@ -150,6 +186,58 @@ export default function AdminEnquiriesPage() {
           ))}
         </div>
       )}
+
+      <Modal
+        open={!!selectedEnquiry}
+        onClose={() => setSelectedEnquiry(null)}
+        title="Enquiry Details"
+      >
+        {selectedEnquiry && (
+          <div className="space-y-4 text-sm">
+            <DetailRow label="Parent Name" value={selectedEnquiry.parentName} />
+            <DetailRow label="Student Name" value={selectedEnquiry.studentName} />
+            <DetailRow label="Class Applied For" value={selectedEnquiry.classAppliedFor} />
+            <DetailRow label="Mobile" value={selectedEnquiry.mobile} />
+            <DetailRow label="Email" value={selectedEnquiry.email || '—'} />
+            <DetailRow
+              label="Message"
+              value={selectedEnquiry.message || '—'}
+              multiline
+            />
+            <DetailRow
+              label="Received"
+              value={new Date(selectedEnquiry.createdAt).toLocaleString('en-IN')}
+            />
+            <div className="grid grid-cols-2 gap-4 pt-2">
+              <div>
+                <p className="text-xs font-semibold uppercase text-gray-400">CRM Status</p>
+                <span
+                  className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${crmColors[selectedEnquiry.crmStatus]}`}
+                >
+                  {selectedEnquiry.crmStatus}
+                </span>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-gray-400">Status</p>
+                <span
+                  className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${statusColors[selectedEnquiry.status]}`}
+                >
+                  {selectedEnquiry.status}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, multiline = false }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase text-gray-400">{label}</p>
+      <p className={`mt-1 text-[var(--color-ink)] ${multiline ? 'whitespace-pre-wrap' : ''}`}>{value}</p>
     </div>
   );
 }

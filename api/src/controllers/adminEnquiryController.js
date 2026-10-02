@@ -1,4 +1,5 @@
 import Enquiry from '../models/Enquiry.js';
+import { pushToCRM } from '../utils/crm.js';
 
 export async function list(req, res) {
   const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
@@ -24,6 +25,17 @@ export async function updateStatus(req, res) {
 
   const enquiry = await Enquiry.findByIdAndUpdate(req.params.id, { status }, { new: true });
   if (!enquiry) return res.status(404).json({ error: 'Not found' });
+
+  res.json({ item: enquiry });
+}
+
+export async function retryCRM(req, res) {
+  const enquiry = await Enquiry.findById(req.params.id);
+  if (!enquiry) return res.status(404).json({ error: 'Not found' });
+
+  const crmStatus = await pushToCRM(enquiry);
+  enquiry.crmStatus = crmStatus;
+  await enquiry.save();
 
   res.json({ item: enquiry });
 }

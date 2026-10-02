@@ -1,16 +1,17 @@
 import Link from 'next/link';
 
-export function Pagination({ page, pages, basePath, theme = 'default' }) {
+export function Pagination({ page, pages, basePath, theme = 'default', extraParams = '' }) {
   if (pages <= 1) return null;
 
   const isPlayful = theme === 'playful';
   const pageNumbers = Array.from({ length: pages }, (_, i) => i + 1);
+  const pageHref = (n) => `${basePath}?page=${n}${extraParams}`;
 
   if (isPlayful) {
     return (
       <nav className="mt-20 flex items-center justify-center gap-8">
         <Link
-          href={`${basePath}?page=${Math.max(page - 1, 1)}`}
+          href={pageHref(Math.max(page - 1, 1))}
           aria-disabled={page === 1}
           className={`text-sm font-bold ${
             page === 1 ? 'pointer-events-none text-slate-300' : 'text-[#0f1b3d] hover:text-[#e4136f]'
@@ -23,7 +24,7 @@ export function Pagination({ page, pages, basePath, theme = 'default' }) {
           {pageNumbers.map((n) => (
             <Link
               key={n}
-              href={`${basePath}?page=${n}`}
+              href={pageHref(n)}
               className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold transition ${
                 n === page
                   ? 'bg-[#e4136f] text-white'
@@ -36,7 +37,7 @@ export function Pagination({ page, pages, basePath, theme = 'default' }) {
         </div>
 
         <Link
-          href={`${basePath}?page=${Math.min(page + 1, pages)}`}
+          href={pageHref(Math.min(page + 1, pages))}
           aria-disabled={page === pages}
           className={`text-sm font-bold ${
             page === pages ? 'pointer-events-none text-slate-300' : 'text-[#0f1b3d] hover:text-[#e4136f]'
@@ -51,7 +52,7 @@ export function Pagination({ page, pages, basePath, theme = 'default' }) {
   return (
     <nav className="mt-20 flex items-center justify-center gap-8">
       <Link
-        href={`${basePath}?page=${Math.max(page - 1, 1)}`}
+        href={pageHref(Math.max(page - 1, 1))}
         aria-disabled={page === 1}
         className={`eyebrow ${
           page === 1
@@ -66,7 +67,7 @@ export function Pagination({ page, pages, basePath, theme = 'default' }) {
         {pageNumbers.map((n) => (
           <Link
             key={n}
-            href={`${basePath}?page=${n}`}
+            href={pageHref(n)}
             className={`font-display text-sm ${
               n === page
                 ? 'text-[var(--color-gold)] underline underline-offset-4'
@@ -79,7 +80,7 @@ export function Pagination({ page, pages, basePath, theme = 'default' }) {
       </div>
 
       <Link
-        href={`${basePath}?page=${Math.min(page + 1, pages)}`}
+        href={pageHref(Math.min(page + 1, pages))}
         aria-disabled={page === pages}
         className={`eyebrow ${
           page === pages

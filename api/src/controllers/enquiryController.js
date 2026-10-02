@@ -1,7 +1,7 @@
 import Enquiry from '../models/Enquiry.js';
 import { validateEnquiry } from '../utils/validators.js';
 import { pushToCRM } from '../utils/crm.js';
-import { sendEnquiryAcknowledgement } from '../utils/mailer.js';
+import { sendEnquiryAcknowledgement, sendAdmissionTeamAlert } from '../utils/mailer.js';
 
 export async function createEnquiry(req, res) {
   const errors = validateEnquiry(req.body);
@@ -37,6 +37,7 @@ export async function createEnquiry(req, res) {
   await enquiry.save();
 
   sendEnquiryAcknowledgement(enquiry);
+  sendAdmissionTeamAlert(enquiry);
 
   res.status(201).json({ message: 'Thank you. We will get in touch with you soon.' });
 }

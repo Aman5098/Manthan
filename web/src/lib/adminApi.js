@@ -116,3 +116,10 @@ export async function updateEnquiryStatus(id, status) {
   if (!res.ok) throw new Error(data.error || 'Failed to update status');
   return data;
 }
+
+export async function retryEnquiryCRM(id) {
+  const res = await authedFetch(`/admin/enquiries/${id}/retry-crm`, { method: 'POST' });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to retry CRM push');
+  return data;
+}

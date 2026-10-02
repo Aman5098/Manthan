@@ -1,6 +1,7 @@
 import { getNewsEvents, getActiveTheme } from '@/lib/api';
 import { NewsEventCard } from '@/components/NewsEventCard';
 import { Pagination } from '@/components/Pagination';
+import { CategoryFilter } from '@/components/CategoryFilter';
 
 export const metadata = {
   title: 'News & Events',
@@ -9,11 +10,18 @@ export const metadata = {
 
 export const dynamic = 'force-dynamic';
 
+const CATEGORIES = ['News', 'Event', 'Achievement'];
+
 export default async function NewsEventsPage({ searchParams }) {
-  const { page: pageParam } = await searchParams;
+  const { page: pageParam, category: categoryParam } = await searchParams;
   const page = Math.max(parseInt(pageParam || '1', 10) || 1, 1);
-  const [{ items, pagination }, theme] = await Promise.all([getNewsEvents(page, 9), getActiveTheme()]);
+  const category = CATEGORIES.includes(categoryParam) ? categoryParam : undefined;
+  const [{ items, pagination }, theme] = await Promise.all([
+    getNewsEvents(page, 9, category),
+    getActiveTheme(),
+  ]);
   const isPlayful = theme === 'playful';
+  const extraParams = category ? `&category=${category}` : '';
 
   if (isPlayful) {
     return (
@@ -29,8 +37,10 @@ export default async function NewsEventsPage({ searchParams }) {
             </p>
           </div>
 
+          <CategoryFilter active={category} theme={theme} />
+
           {items.length === 0 ? (
-            <p className="mt-20 text-center text-slate-400">No published items yet.</p>
+            <p className="mt-20 text-center text-slate-400">No items found.</p>
           ) : (
             <>
               <div className="mt-20 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -38,7 +48,13 @@ export default async function NewsEventsPage({ searchParams }) {
                   <NewsEventCard key={item._id} item={item} theme={theme} priority={page === 1 && index === 0} />
                 ))}
               </div>
-              <Pagination page={pagination.page} pages={pagination.pages} basePath="/news-events" theme={theme} />
+              <Pagination
+                page={pagination.page}
+                pages={pagination.pages}
+                basePath="/news-events"
+                theme={theme}
+                extraParams={extraParams}
+              />
             </>
           )}
         </div>
@@ -60,8 +76,10 @@ export default async function NewsEventsPage({ searchParams }) {
           </p>
         </div>
 
+        <CategoryFilter active={category} theme={theme} />
+
         {items.length === 0 ? (
-          <p className="mt-20 text-center text-[var(--color-ink-soft)]/60">No published items yet.</p>
+          <p className="mt-20 text-center text-[var(--color-ink-soft)]/60">No items found.</p>
         ) : (
           <>
             <div className="mt-20 grid grid-cols-1 gap-x-10 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">
@@ -69,7 +87,12 @@ export default async function NewsEventsPage({ searchParams }) {
                 <NewsEventCard key={item._id} item={item} priority={page === 1 && index === 0} />
               ))}
             </div>
-            <Pagination page={pagination.page} pages={pagination.pages} basePath="/news-events" />
+            <Pagination
+              page={pagination.page}
+              pages={pagination.pages}
+              basePath="/news-events"
+              extraParams={extraParams}
+            />
           </>
         )}
       </div>
